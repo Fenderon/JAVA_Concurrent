@@ -1,0 +1,80 @@
+package com.yc.threadcoreknowledge.stopThread.volatileDemo;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
+/**
+ * 用中断来修复刚才无尽等待的问题
+ *
+ * @version 1.0 create at 2020/1/18
+ * @auther yangchuan
+ */
+public class WrongWayVolatileFixed {
+
+    public static void main(String[] args) throws InterruptedException {
+        WrongWayVolatileFixed body = new WrongWayVolatileFixed();
+
+        ArrayBlockingQueue storage = new ArrayBlockingQueue(10);
+
+        Producer producer = body.new Producer(storage);
+        Thread produceThread = new Thread(producer);
+        produceThread.start();
+
+        Thread.sleep(1000);
+
+        Consumer consumer = body.new Consumer(storage);
+        while (consumer.needMoreNums()) {
+            System.out.println(consumer.storage.take() + "被消费了");
+            Thread.sleep(100);
+        }
+        System.out.println("消费者不需要更多数据了");
+
+        produceThread.interrupt();
+    }
+
+    class Producer implements Runnable {
+
+        BlockingQueue storage;
+
+        public Producer(BlockingQueue storage) {
+            this.storage = storage;
+        }
+
+        @Override
+        public void run() {
+            int num = 0;
+            try {
+                while (num <= 100000 &&
+                        !Thread.currentThread().isInterrupted()) {
+                    if (num % 100 == 0) {
+                        //阻塞点，，阻塞在这里，，
+                        storage.put(num);
+                        System.out.println(num + "是100的倍数，被放到仓库中");
+                    }
+                    num++;
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                System.out.println("生产者停止运行");
+            }
+        }
+    }
+
+    class Consumer {
+        BlockingQueue storage;
+
+        public Consumer(BlockingQueue storage) {
+            this.storage = storage;
+        }
+
+        public boolean needMoreNums() {
+            if (Math.random() > 0.95) {
+                return false;
+            }
+            return true;
+        }
+    }
+}
+
+
