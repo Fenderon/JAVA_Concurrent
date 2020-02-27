@@ -13,7 +13,7 @@ public class RunnableCantThrowException {
     }
     public static void main (String[] args) {
         Runnable runnable = ()->{
-            throw new Exception();
-        }
+//            throw new Exception();
+        };
     }
 }
